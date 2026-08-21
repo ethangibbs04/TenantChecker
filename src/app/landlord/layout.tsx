@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentUserAndRoles } from "@/lib/auth";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { getCurrentUserAndRoles, getDisplayName } from "@/lib/auth";
+import { DashboardShell } from "@/components/dashboard-shell";
 
 export default async function LandlordLayout({
   children,
@@ -13,9 +13,16 @@ export default async function LandlordLayout({
   if (!roles.includes("landlord")) redirect("/");
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <DashboardNav activeRole="landlord" roles={roles} />
-      <main className="flex-1 px-6 py-8">{children}</main>
-    </div>
+    <DashboardShell
+      activeRole="landlord"
+      roles={roles}
+      userLabel={getDisplayName(user)}
+      navItems={[
+        { label: "Dashboard", href: "/landlord" },
+        { label: "Properties", href: "/landlord/properties" },
+      ]}
+    >
+      {children}
+    </DashboardShell>
   );
 }

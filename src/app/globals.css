@@ -1,26 +1,233 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* --- shadcn semantic tokens (component-facing) --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* --- Tenantcheck brand scale (frontendplan.md, Section 1) --- */
+  --color-navy-950: var(--navy-950);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-navy-700: var(--navy-700);
+  --color-navy-600: var(--navy-600);
+  --color-navy-500: var(--navy-500);
+  --color-navy-100: var(--navy-100);
+  --color-navy-50: var(--navy-50);
+
+  --color-sky-600: var(--sky-600);
+  --color-sky-500: var(--sky-500);
+  --color-sky-400: var(--sky-400);
+  --color-sky-100: var(--sky-100);
+
+  --color-gold-500: var(--gold-500);
+  --color-gold-100: var(--gold-100);
+
+  --color-slate-950: var(--slate-950);
+  --color-slate-900: var(--slate-900);
+  --color-slate-800: var(--slate-800);
+  --color-slate-700: var(--slate-700);
+  --color-slate-600: var(--slate-600);
+  --color-slate-500: var(--slate-500);
+  --color-slate-400: var(--slate-400);
+  --color-slate-300: var(--slate-300);
+  --color-slate-200: var(--slate-200);
+  --color-slate-100: var(--slate-100);
+  --color-slate-50: var(--slate-50);
+
+  --color-success-600: var(--success-600);
+  --color-success-100: var(--success-100);
+  --color-warning-600: var(--warning-600);
+  --color-warning-100: var(--warning-100);
+  --color-danger-600: var(--danger-600);
+  --color-danger-100: var(--danger-100);
+  --color-info-600: var(--info-600);
+  --color-info-100: var(--info-100);
+
+  /* Tinted (navy) shadow scale — overrides Tailwind's default flat-gray
+     shadow-sm/md/lg utilities app-wide, see frontendplan.md Section 1 */
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --shadow-md: 0 4px 16px -4px hsl(var(--shadow-color) / 0.12);
+  --shadow-lg: 0 12px 32px -8px hsl(var(--shadow-color) / 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* --- Tenantcheck brand palette --- */
+  --navy-950: #05101f;
+  --navy-900: #0a1f3d;
+  --navy-800: #0f2c52;
+  --navy-700: #123868;
+  --navy-600: #1c4c85;
+  --navy-500: #2f63a3;
+  --navy-100: #e8eff8;
+  --navy-50: #f4f8fc;
+
+  --sky-600: #0072d6;
+  --sky-500: #1e93ff;
+  --sky-400: #55b2ff;
+  --sky-100: #e6f3ff;
+
+  --gold-500: #d88d13;
+  --gold-100: #fbecd2;
+
+  --slate-950: #0b141d;
+  --slate-900: #14202e;
+  --slate-800: #22303f;
+  --slate-700: #3c4a5c;
+  --slate-600: #4f5f74;
+  --slate-500: #6b7a8d;
+  --slate-400: #8a99ab;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+
+  --success-600: #15803d;
+  --success-100: #dcfce7;
+  --warning-600: #b45309;
+  --warning-100: #fef3c7;
+  --danger-600: #b91c1c;
+  --danger-100: #fee2e2;
+  --info-600: var(--sky-600);
+  --info-100: var(--sky-100);
+
+  /* Premium touches: a navy-tinted shadow color, the brand hero/CTA
+     gradient, and the one easing curve every transition should use */
+  --shadow-color: 210 60% 15%;
+  --gradient-brand: linear-gradient(135deg, var(--navy-800) 0%, var(--navy-600) 55%, var(--sky-600) 100%);
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- shadcn semantic tokens, mapped onto the brand palette --- */
+  --background: var(--slate-50);
+  --foreground: var(--slate-900);
+  --card: #ffffff;
+  --card-foreground: var(--slate-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--slate-900);
+  --primary: var(--navy-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--slate-100);
+  --secondary-foreground: var(--navy-800);
+  --muted: var(--slate-100);
+  --muted-foreground: var(--slate-500);
+  --accent: var(--sky-100);
+  --accent-foreground: var(--sky-600);
+  --destructive: var(--danger-600);
+  --border: var(--slate-200);
+  --input: var(--slate-200);
+  --ring: var(--sky-500);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Body font: Geist (loaded in layout.tsx) for UI/data density; the
+     display font (Fraunces, also loaded in layout.tsx) is opt-in via
+     font-display / font-heading for page titles only. See
+     frontendplan.md Section 1 "Typography". */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
+/* Dark mode is out of scope for v1 (frontendplan.md decision), but the
+   token structure below means flipping it on later is a values-only
+   change, not a rewrite. Not exposed in the UI yet. */
+.dark {
+  --background: var(--navy-950);
+  --foreground: var(--slate-50);
+  --card: var(--navy-900);
+  --card-foreground: var(--slate-50);
+  --popover: var(--navy-900);
+  --popover-foreground: var(--slate-50);
+  --primary: var(--sky-400);
+  --primary-foreground: var(--navy-950);
+  --secondary: var(--navy-800);
+  --secondary-foreground: var(--slate-50);
+  --muted: var(--navy-800);
+  --muted-foreground: var(--slate-400);
+  --accent: var(--navy-800);
+  --accent-foreground: var(--sky-400);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: color-mix(in oklch, var(--slate-50) 12%, transparent);
+  --input: color-mix(in oklch, var(--slate-50) 15%, transparent);
+  --ring: var(--sky-400);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: var(--navy-900);
+  --sidebar-foreground: var(--slate-50);
+  --sidebar-primary: var(--sky-400);
+  --sidebar-primary-foreground: var(--navy-950);
+  --sidebar-accent: var(--navy-800);
+  --sidebar-accent-foreground: var(--slate-50);
+  --sidebar-border: color-mix(in oklch, var(--slate-50) 12%, transparent);
+  --sidebar-ring: var(--sky-400);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

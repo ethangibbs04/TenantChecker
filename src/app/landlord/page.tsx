@@ -15,9 +15,6 @@ export default async function LandlordDashboard() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Your Tenantchecks</h1>
         <div className="flex gap-3">
-          <Link href="/landlord/properties" className="rounded border px-3 py-2 text-sm">
-            Properties
-          </Link>
           <Link
             href="/landlord/checks/new"
             className="rounded bg-black px-3 py-2 text-sm text-white"
