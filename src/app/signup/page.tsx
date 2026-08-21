@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invite = searchParams.get("invite");
+  const destination = invite ? `/invite/${invite}` : "/";
+
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +30,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: fullName, phone },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
       },
     });
 
@@ -39,7 +43,7 @@ export default function SignupPage() {
 
     if (data.session) {
       // mailer_autoconfirm is on (dev) — we already have a session.
-      router.push("/");
+      router.push(destination);
       router.refresh();
       return;
     }
@@ -61,7 +65,9 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="text-xl font-semibold">Create your landlord account</h1>
+      <h1 className="text-xl font-semibold">
+        {invite ? "Create your account" : "Create your landlord account"}
+      </h1>
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <input
           className="rounded border px-3 py-2"
@@ -104,10 +110,18 @@ export default function SignupPage() {
       </form>
       <p className="mt-4 text-sm text-neutral-600">
         Already have an account?{" "}
-        <Link href="/login" className="underline">
+        <Link href={invite ? `/login?invite=${invite}` : "/login"} className="underline">
           Log in
         </Link>
       </p>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }
