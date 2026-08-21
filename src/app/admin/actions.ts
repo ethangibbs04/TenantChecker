@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ADMIN_DOCUMENT_TYPES, type AdminDocumentType } from "@/lib/application-form";
+import { sendEmail } from "@/lib/resend";
+import { checkCompletedEmail } from "@/lib/email-templates";
+import { getUserEmailById } from "@/lib/supabase/service";
 
 export async function uploadAdminDocument(formData: FormData) {
   const checkId = String(formData.get("check_id") ?? "");
@@ -61,6 +64,49 @@ export async function shipCheck(checkId: string) {
 
   if (error) throw new Error(error.message);
 
+  await notifyLandlordCheckCompleted(supabase, checkId);
+
   revalidatePath(`/admin/checks/${checkId}`);
   revalidatePath("/admin");
+}
+
+// Notification failure must never block shipping itself — the check is
+// already COMPLETED and visible on the landlord's dashboard regardless
+// of whether this email goes out.
+async function notifyLandlordCheckCompleted(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  checkId: string
+) {
+  try {
+    const { data: check } = await supabase
+      .from("checks")
+      .select("landlord_id, tenant_full_name, properties(label)")
+      .eq("id", checkId)
+      .single();
+    if (!check) return;
+
+    const landlordEmail = await getUserEmailById(check.landlord_id);
+    if (!landlordEmail) return;
+
+    const propertyLabel =
+      (check.properties as unknown as { label: string } | null)?.label ?? "your property";
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+    const { subject, html } = checkCompletedEmail({
+      tenantName: check.tenant_full_name,
+      propertyLabel,
+      checkUrl: `${appUrl}/landlord/checks/${checkId}`,
+    });
+    const result = await sendEmail({ to: landlordEmail, subject, html });
+
+    await supabase.rpc("log_notification", {
+      p_check_id: checkId,
+      p_recipient_id: check.landlord_id,
+      p_channel: "email",
+      p_template: "check_completed",
+      p_status: result.ok ? "sent" : "failed",
+    });
+  } catch (err) {
+    console.error("notifyLandlordCheckCompleted failed", err);
+  }
 }

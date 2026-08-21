@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { verifyItnSignature } from "@/lib/payfast";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendEmail } from "@/lib/resend";
+import { applicationRequestedEmail } from "@/lib/email-templates";
 
 // PayFast's server-to-server Instant Transaction Notification. Must
 // respond quickly; PayFast retries on non-2xx. Signature verification is
@@ -39,6 +41,37 @@ export async function POST(request: Request) {
   if (error) {
     console.error("PayFast ITN: mark_paid failed", error.message, fields);
     return new NextResponse("mark_paid failed", { status: 500 });
+  }
+
+  // Notification failure must not turn this into a 500 — mark_paid()
+  // already succeeded, which is what PayFast's retry logic cares about.
+  try {
+    const { data: check } = await supabase
+      .from("checks")
+      .select("tenant_id, tenant_email, tenant_full_name, properties(label)")
+      .eq("id", checkId)
+      .single();
+
+    if (check) {
+      const propertyLabel =
+        (check.properties as unknown as { label: string } | null)?.label ?? "your property";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+      const { subject, html } = applicationRequestedEmail({
+        propertyLabel,
+        applicationUrl: `${appUrl}/tenant/checks/${checkId}/application`,
+      });
+      const result = await sendEmail({ to: check.tenant_email, subject, html });
+
+      await supabase.rpc("log_notification", {
+        p_check_id: checkId,
+        p_recipient_id: check.tenant_id,
+        p_channel: "email",
+        p_template: "application_requested",
+        p_status: result.ok ? "sent" : "failed",
+      });
+    }
+  } catch (notifyErr) {
+    console.error("PayFast ITN: application_requested notification failed", notifyErr);
   }
 
   return new NextResponse("ok", { status: 200 });

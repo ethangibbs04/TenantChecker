@@ -10,6 +10,9 @@ import {
   type ApplicationFormData,
   type RequiredDocumentType,
 } from "@/lib/application-form";
+import { sendEmail } from "@/lib/resend";
+import { paymentRequestedEmail } from "@/lib/email-templates";
+import { getUserEmailById } from "@/lib/supabase/service";
 
 export async function submitConsent(formData: FormData) {
   const checkId = String(formData.get("check_id") ?? "");
@@ -23,7 +26,50 @@ export async function submitConsent(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
+  await notifyLandlordPaymentRequested(supabase, checkId);
+
   redirect(`/tenant/checks/${checkId}`);
+}
+
+// Notification failures must never block consent itself — the check has
+// already moved to AWAITING_PAYMENT regardless of whether this email
+// goes out; the landlord's dashboard still shows it either way.
+async function notifyLandlordPaymentRequested(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  checkId: string
+) {
+  try {
+    const { data: check } = await supabase
+      .from("checks")
+      .select("landlord_id, tenant_full_name, properties(label)")
+      .eq("id", checkId)
+      .single();
+    if (!check) return;
+
+    const landlordEmail = await getUserEmailById(check.landlord_id);
+    if (!landlordEmail) return;
+
+    const propertyLabel =
+      (check.properties as unknown as { label: string } | null)?.label ?? "your property";
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+    const { subject, html } = paymentRequestedEmail({
+      tenantName: check.tenant_full_name,
+      propertyLabel,
+      payUrl: `${appUrl}/landlord/checks/${checkId}/pay`,
+    });
+    const result = await sendEmail({ to: landlordEmail, subject, html });
+
+    await supabase.rpc("log_notification", {
+      p_check_id: checkId,
+      p_recipient_id: check.landlord_id,
+      p_channel: "email",
+      p_template: "payment_requested",
+      p_status: result.ok ? "sent" : "failed",
+    });
+  } catch (err) {
+    console.error("notifyLandlordPaymentRequested failed", err);
+  }
 }
 
 function extractFormData(formData: FormData): ApplicationFormData {

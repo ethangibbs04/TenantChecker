@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusTracker } from "@/components/status-tracker";
 import type { CheckStatus } from "@/lib/checks";
 import { InviteLinkBox } from "./invite-link-box";
+import { PackageDownloads } from "./package-downloads";
 
 export default async function CheckDetailPage({
   params,
@@ -34,6 +35,23 @@ export default async function CheckDetailPage({
     .select("token, expires_at, used_at")
     .eq("check_id", id)
     .single();
+
+  const { data: packageDocuments } = await supabase
+    .from("documents")
+    .select("id, document_type")
+    .eq("check_id", id)
+    .eq("is_package_document", true);
+
+  const { data: applicationForm } = await supabase
+    .from("application_forms")
+    .select("id")
+    .eq("check_id", id)
+    .eq("status", "submitted")
+    .maybeSingle();
+
+  const showPackage =
+    check.status === "COMPLETED" &&
+    ((packageDocuments && packageDocuments.length > 0) || !!applicationForm);
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
@@ -67,6 +85,14 @@ export default async function CheckDetailPage({
 
       {invite && !invite.used_at && (
         <InviteLinkBox token={invite.token} expiresAt={invite.expires_at as string} />
+      )}
+
+      {showPackage && (
+        <PackageDownloads
+          checkId={id}
+          hasApplicationForm={!!applicationForm}
+          documents={packageDocuments ?? []}
+        />
       )}
     </div>
   );

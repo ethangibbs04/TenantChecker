@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { sendEmail } from "@/lib/resend";
+import { consentRequestedEmail } from "@/lib/email-templates";
 
 // Landlords never create a bare property — a property only ever comes
 // into existence as part of buying a Tenantcheck. Reusing one for a
@@ -57,5 +59,52 @@ export async function buyTenantcheck(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
+  await notifyTenantConsentRequested(supabase, checkId, tenant_full_name, tenant_email);
+
   redirect(`/landlord/checks/${checkId}`);
+}
+
+// Notification failures must never block the purchase flow itself — the
+// check already exists and the landlord still has the manual invite-link
+// fallback (InviteLinkBox) regardless of whether this email goes out.
+async function notifyTenantConsentRequested(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  checkId: string,
+  tenantName: string,
+  tenantEmail: string
+) {
+  try {
+    const { data: invite } = await supabase
+      .from("check_invites")
+      .select("token")
+      .eq("check_id", checkId)
+      .single();
+    if (!invite) return;
+
+    const { data: check } = await supabase
+      .from("checks")
+      .select("properties(label)")
+      .eq("id", checkId)
+      .single();
+    const propertyLabel =
+      (check?.properties as unknown as { label: string } | null)?.label ?? "your property";
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
+    const { subject, html } = consentRequestedEmail({
+      tenantName,
+      propertyLabel,
+      inviteUrl: `${appUrl}/invite/${invite.token}`,
+    });
+    const result = await sendEmail({ to: tenantEmail, subject, html });
+
+    await supabase.rpc("log_notification", {
+      p_check_id: checkId,
+      p_recipient_id: null,
+      p_channel: "email",
+      p_template: "consent_requested",
+      p_status: result.ok ? "sent" : "failed",
+    });
+  } catch (err) {
+    console.error("notifyTenantConsentRequested failed", err);
+  }
 }
