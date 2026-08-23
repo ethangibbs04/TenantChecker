@@ -18,7 +18,7 @@ export default async function LandlordLayout({
       roles={roles}
       userLabel={getDisplayName(user)}
       navItems={[
-        { label: "Dashboard", href: "/landlord" },
+        { label: "My Activity", href: "/landlord" },
         { label: "Properties", href: "/landlord/properties" },
       ]}
     >

@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { MarketingHeader } from "@/components/marketing-header";
+import { getCurrentUserAndRoles, getDisplayName } from "@/lib/auth";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { user, roles } = await getCurrentUserAndRoles();
+  const auth = user ? { userLabel: getDisplayName(user), roles } : null;
+
   return (
     <>
-      <MarketingHeader />
+      <SiteHeader auth={auth} />
       <main className="flex-1">
         <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
           <h1 className="font-display text-4xl font-medium text-navy-900">
@@ -40,7 +44,7 @@ export default function AboutPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ensureLandlordRoleForDestination } from "@/app/actions";
+import { resolveAmbiguousDestination, type PostAuthChoice } from "@/lib/resolve-post-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +14,15 @@ export function SignupForm({
   invite,
   onSwitchToLogin,
   onSuccess,
+  onAmbiguousDestination,
 }: {
   destination: string;
   invite?: string;
   onSwitchToLogin: () => void;
   onSuccess?: () => void;
+  /** See LoginForm — same in-dialog "choose a dashboard"/"claim landlord"
+   * hand-off, only used when the auth dialog renders this form. */
+  onAmbiguousDestination?: (choice: PostAuthChoice) => void;
 }) {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -53,6 +58,19 @@ export function SignupForm({
     if (data.session) {
       // mailer_autoconfirm is on (dev) — we already have a session.
       await ensureLandlordRoleForDestination(destination);
+
+      if (destination === "/" && onAmbiguousDestination) {
+        const resolved = await resolveAmbiguousDestination();
+        if (resolved.type === "choice") {
+          onAmbiguousDestination(resolved.choice);
+          return;
+        }
+        onSuccess?.();
+        router.push(resolved.to);
+        router.refresh();
+        return;
+      }
+
       onSuccess?.();
       router.push(destination);
       router.refresh();

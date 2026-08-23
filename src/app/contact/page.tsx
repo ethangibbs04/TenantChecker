@@ -1,5 +1,6 @@
 import { Mail, Phone } from "lucide-react";
-import { MarketingHeader } from "@/components/marketing-header";
+import { getCurrentUserAndRoles, getDisplayName } from "@/lib/auth";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -8,10 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 const CONTACT_EMAIL = "hello@tenantcheck.co.za";
 const CONTACT_PHONE = "+27 00 000 0000";
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { user, roles } = await getCurrentUserAndRoles();
+  const auth = user ? { userLabel: getDisplayName(user), roles } : null;
+
   return (
     <>
-      <MarketingHeader />
+      <SiteHeader auth={auth} />
       <main className="flex-1">
         <section className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
           <h1 className="font-display text-4xl font-medium text-navy-900">
@@ -54,7 +58,7 @@ export default function ContactPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   );
 }

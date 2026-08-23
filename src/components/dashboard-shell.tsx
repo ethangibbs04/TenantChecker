@@ -1,5 +1,6 @@
 import type { Role } from "@/lib/auth";
-import { AppHeader } from "@/components/app-header";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 export function DashboardShell({
   activeRole,
@@ -16,15 +17,14 @@ export function DashboardShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <AppHeader
-        activeRole={activeRole}
-        roles={roles}
-        userLabel={userLabel}
-        navItems={navItems}
+      <SiteHeader
+        auth={{ userLabel, roles, activeRole }}
+        roleNavItems={navItems}
       />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
+      <SiteFooter loggedIn />
     </div>
   );
 }

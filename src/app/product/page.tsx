@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldCheck, FileCheck2, Sparkles } from "lucide-react";
-import { MarketingHeader } from "@/components/marketing-header";
+import { getCurrentUserAndRoles, getDisplayName } from "@/lib/auth";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BuyTenantcheckButton } from "@/components/buy-tenantcheck-button";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,13 @@ const STATUSES = [
   "Completed",
 ];
 
-export default function ProductPage() {
+export default async function ProductPage() {
+  const { user, roles } = await getCurrentUserAndRoles();
+  const auth = user ? { userLabel: getDisplayName(user), roles } : null;
+
   return (
     <>
-      <MarketingHeader />
+      <SiteHeader auth={auth} />
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 lg:px-8">
           <h1 className="font-display text-4xl font-medium text-navy-900">
@@ -127,7 +131,7 @@ export default function ProductPage() {
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   );
 }

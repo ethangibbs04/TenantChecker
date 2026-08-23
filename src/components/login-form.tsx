@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ensureLandlordRoleForDestination } from "@/app/actions";
+import { resolveAmbiguousDestination, type PostAuthChoice } from "@/lib/resolve-post-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +13,17 @@ export function LoginForm({
   destination,
   onSwitchToSignup,
   onSuccess,
+  onAmbiguousDestination,
 }: {
   destination: string;
   onSwitchToSignup: () => void;
   onSuccess?: () => void;
+  /** When set (the auth dialog), a plain login with no specific destination
+   * resolves roles client-side and hands them back instead of navigating,
+   * so the dialog can show a "choose a dashboard" / "claim landlord" step
+   * in place. Omitted on the standalone /login page, which keeps the old
+   * behavior of just navigating to "/" and letting it redirect server-side. */
+  onAmbiguousDestination?: (choice: PostAuthChoice) => void;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -42,6 +50,18 @@ export function LoginForm({
     }
 
     await ensureLandlordRoleForDestination(destination);
+
+    if (destination === "/" && onAmbiguousDestination) {
+      const resolved = await resolveAmbiguousDestination();
+      if (resolved.type === "choice") {
+        onAmbiguousDestination(resolved.choice);
+        return;
+      }
+      onSuccess?.();
+      router.push(resolved.to);
+      router.refresh();
+      return;
+    }
 
     onSuccess?.();
     router.push(destination);

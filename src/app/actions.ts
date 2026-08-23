@@ -35,13 +35,7 @@ export async function claimLandlordRole() {
     redirect("/login");
   }
 
-  const { error } = await supabase
-    .from("user_roles")
-    .insert({ user_id: user.id, role: "landlord" });
-
-  if (error) {
-    throw new Error(error.message);
-  }
+  await ensureLandlordRole(supabase, user.id);
 
   redirect("/landlord");
 }

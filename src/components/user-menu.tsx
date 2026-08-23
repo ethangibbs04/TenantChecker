@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import type { Role } from "@/lib/auth";
+import { ROLE_LABEL } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,12 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const ROLE_LABEL: Record<Role, string> = {
-  landlord: "Landlord",
-  tenant: "Tenant",
-  admin: "Admin",
-};
 
 function initialsFor(label: string) {
   return label.trim().slice(0, 1).toUpperCase() || "?";
@@ -28,12 +23,15 @@ export function UserMenu({
   roles,
   userLabel,
 }: {
-  activeRole: Role;
+  /** Set when rendered inside a role-scoped dashboard; omitted on marketing
+   * pages / the multi-role picker, where there's no "current" role to switch
+   * away from — every role is just an equally-valid destination. */
+  activeRole?: Role;
   roles: Role[];
   userLabel: string;
 }) {
   const logoutFormRef = useRef<HTMLFormElement>(null);
-  const otherRoles = roles.filter((r) => r !== activeRole);
+  const otherRoles = activeRole ? roles.filter((r) => r !== activeRole) : roles;
 
   return (
     <>
@@ -56,7 +54,9 @@ export function UserMenu({
             <>
               {otherRoles.map((r) => (
                 <DropdownMenuItem key={r} asChild>
-                  <Link href={`/${r}`}>Switch to {ROLE_LABEL[r]}</Link>
+                  <Link href={`/${r}`}>
+                    {activeRole ? `Switch to ${ROLE_LABEL[r]}` : `Go to ${ROLE_LABEL[r]} dashboard`}
+                  </Link>
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
