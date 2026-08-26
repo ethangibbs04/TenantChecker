@@ -7,13 +7,18 @@ export default async function TenantLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, roles } = await getCurrentUserAndRoles();
+  const { user, roles, pendingActionCounts } = await getCurrentUserAndRoles();
 
   if (!user) redirect("/login");
   if (!roles.includes("tenant")) redirect("/");
 
   return (
-    <DashboardShell activeRole="tenant" roles={roles} userLabel={getDisplayName(user)}>
+    <DashboardShell
+      activeRole="tenant"
+      roles={roles}
+      userLabel={getDisplayName(user)}
+      pendingActionCounts={pendingActionCounts}
+    >
       {children}
     </DashboardShell>
   );

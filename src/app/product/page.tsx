@@ -16,8 +16,10 @@ const STATUSES = [
 ];
 
 export default async function ProductPage() {
-  const { user, roles } = await getCurrentUserAndRoles();
-  const auth = user ? { userLabel: getDisplayName(user), roles } : null;
+  const { user, roles, pendingActionCounts, lastActiveRole } = await getCurrentUserAndRoles();
+  const auth = user
+    ? { userLabel: getDisplayName(user), roles, pendingActionCounts, activeRole: lastActiveRole }
+    : null;
 
   return (
     <>

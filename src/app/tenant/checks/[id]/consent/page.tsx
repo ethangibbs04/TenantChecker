@@ -10,11 +10,18 @@ export default async function ConsentPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
+  // Explicit tenant_id filter — RLS also allows this row through for the
+  // landlord of the check, and this is the tenant-facing consent flow.
   const { data: check } = await supabase
     .from("checks")
     .select("id, status, properties(label)")
     .eq("id", id)
+    .eq("tenant_id", user.id)
     .single();
 
   if (!check) notFound();

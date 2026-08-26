@@ -5,8 +5,10 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 
 export default async function AboutPage() {
-  const { user, roles } = await getCurrentUserAndRoles();
-  const auth = user ? { userLabel: getDisplayName(user), roles } : null;
+  const { user, roles, pendingActionCounts, lastActiveRole } = await getCurrentUserAndRoles();
+  const auth = user
+    ? { userLabel: getDisplayName(user), roles, pendingActionCounts, activeRole: lastActiveRole }
+    : null;
 
   return (
     <>

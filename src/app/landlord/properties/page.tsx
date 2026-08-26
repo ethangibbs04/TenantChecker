@@ -1,5 +1,10 @@
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { Card, CardContent } from "@/components/ui/card";
+import { BuyTenantcheckButton } from "@/components/buy-tenantcheck-button";
 
 export default async function PropertiesPage() {
   const supabase = await createClient();
@@ -10,42 +15,35 @@ export default async function PropertiesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Your Properties</h1>
-        <Link
-          href="/landlord/checks/new"
-          className="rounded bg-black px-3 py-2 text-sm text-white"
-        >
-          Buy Tenantcheck
-        </Link>
-      </div>
+      <PageHeader
+        title="Properties"
+        description="Every property you've bought a Tenantcheck against."
+        actions={<BuyTenantcheckButton />}
+      />
 
       {!properties || properties.length === 0 ? (
-        <p className="text-neutral-600">
-          No properties yet — a property is added automatically the first
-          time you{" "}
-          <Link href="/landlord/checks/new" className="underline">
-            buy a Tenantcheck
-          </Link>{" "}
-          against it.
-        </p>
+        <EmptyState
+          icon={Building2}
+          title="No properties yet"
+          description="A property is added automatically the first time you buy a Tenantcheck against it."
+          action={{ label: "Buy your first Tenantcheck", href: "/landlord/checks/new" }}
+        />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {properties.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/landlord/properties/${p.id}`}
-                className="block rounded border p-4 hover:bg-neutral-50"
-              >
-                <p className="font-medium">{p.label}</p>
-                <p className="text-sm text-neutral-500">
-                  {p.address_line1}
-                  {p.city ? `, ${p.city}` : ""}
-                </p>
-              </Link>
-            </li>
+            <Link key={p.id} href={`/landlord/properties/${p.id}`}>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="flex flex-col gap-1">
+                  <p className="font-medium text-slate-900">{p.label}</p>
+                  <p className="text-sm text-slate-500">
+                    {p.address_line1}
+                    {p.city ? `, ${p.city}` : ""}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

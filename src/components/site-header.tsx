@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, LogOut } from "lucide-react";
-import type { Role } from "@/lib/auth";
-import { ROLE_LABEL } from "@/lib/roles";
+import type { PendingActionCounts, Role } from "@/lib/auth";
+import { ROLE_LABEL, getRoleNavItems } from "@/lib/roles";
 import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ export type SiteHeaderAuth = {
    * marketing pages and the multi-role picker, where there's no single
    * "current" role. */
   activeRole?: Role;
+  /** Drives the little red dot on a role's "My Activity" nav item. */
+  pendingActionCounts?: PendingActionCounts;
 };
 
 function NavLink({
@@ -41,25 +43,35 @@ function NavLink({
   active,
   className = "",
   onClick,
+  showDot = false,
   children,
 }: {
   href: string;
   active: boolean;
   className?: string;
   onClick?: () => void;
+  /** Little red dot indicating something in this section needs the user's action. */
+  showDot?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
-      className={`rounded-lg text-sm font-medium transition-colors ${
+      className={`relative rounded-lg text-sm font-medium transition-colors ${
         active
           ? "bg-sky-100 text-sky-700"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
       } ${className}`}
     >
       {children}
+      {showDot && (
+        <span
+          className="ml-1.5 inline-block size-1.5 rounded-full bg-danger-600 align-middle"
+          aria-hidden="true"
+        />
+      )}
+      {showDot && <span className="sr-only"> — action needed</span>}
     </Link>
   );
 }
@@ -69,19 +81,15 @@ function NavLink({
  * Contact) and every dashboard route alike — so logging in adds account
  * context instead of swapping to a disconnected "app" shell. Site-level nav
  * (Home/Product/About Us/Contact) is always present; role-specific nav
- * items (e.g. the landlord's "My Activity") only show up when `auth` has an
- * `activeRole`, i.e. inside that role's own route tree.
+ * items (e.g. the landlord's "My Activity") show up as soon as `auth`
+ * carries that role, on every page, not just inside that role's own route
+ * tree — logging in only ever adds tabs, it never hides the rest.
  */
-export function SiteHeader({
-  auth,
-  roleNavItems = [],
-}: {
-  auth: SiteHeaderAuth | null;
-  roleNavItems?: { label: string; href: string }[];
-}) {
+export function SiteHeader({ auth }: { auth: SiteHeaderAuth | null }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { openLogin, openSignup } = useAuthDialog();
+  const roleNavItems = auth ? getRoleNavItems(auth.roles, auth.pendingActionCounts, auth.activeRole) : [];
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -110,6 +118,7 @@ export function SiteHeader({
                   href={item.href}
                   active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
                   className="px-3 py-1.5"
+                  showDot={item.hasPendingAction}
                 >
                   {item.label}
                 </NavLink>
@@ -171,6 +180,7 @@ export function SiteHeader({
                       href={item.href}
                       active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
                       className="block px-3 py-2"
+                      showDot={item.hasPendingAction}
                     >
                       {item.label}
                     </NavLink>

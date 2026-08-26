@@ -4,21 +4,18 @@ import { createContext, useCallback, useContext, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginForm } from "@/components/login-form";
 import { SignupForm } from "@/components/signup-form";
-import { claimLandlordRole } from "@/app/actions";
 import { ROLE_LABEL } from "@/lib/roles";
 import type { PostAuthChoice } from "@/lib/resolve-post-auth";
 
-type Mode = "login" | "signup" | "choose-role" | "claim-landlord";
+type Mode = "login" | "signup" | "choose-role";
 
 const MODE_TITLE: Record<Mode, string> = {
   login: "Log in",
   signup: "Sign up",
   "choose-role": "Choose a dashboard",
-  "claim-landlord": "Welcome to Tenantcheck",
 };
 
 type AuthDialogState = {
@@ -50,12 +47,11 @@ export function AuthDialogProvider({ children }: { children: React.ReactNode }) 
   );
   const close = useCallback(() => setState((s) => ({ ...s, open: false })), []);
 
+  // Only called when there's a genuine choice to make — see
+  // resolveAmbiguousDestination, which resolves zero or one role straight
+  // to a destination instead of handing back a "choice".
   const handleAmbiguousDestination = useCallback((choice: PostAuthChoice) => {
-    setState((s) => ({
-      ...s,
-      mode: choice.roles.length === 0 ? "claim-landlord" : "choose-role",
-      choice,
-    }));
+    setState((s) => ({ ...s, mode: "choose-role", choice }));
   }, []);
 
   return (
@@ -87,9 +83,6 @@ export function AuthDialogProvider({ children }: { children: React.ReactNode }) 
           )}
           {state.mode === "choose-role" && state.choice && (
             <ChooseRolePanel choice={state.choice} onNavigate={close} />
-          )}
-          {state.mode === "claim-landlord" && state.choice && (
-            <ClaimLandlordPanel onSubmit={close} />
           )}
         </DialogContent>
       </Dialog>
@@ -129,26 +122,6 @@ function ChooseRolePanel({
           </Link>
         ))}
       </div>
-    </div>
-  );
-}
-
-function ClaimLandlordPanel({ onSubmit }: { onSubmit: () => void }) {
-  return (
-    <div className="flex flex-col gap-4 text-center">
-      <div>
-        <h2 className="font-display text-2xl font-medium text-navy-900">
-          Welcome to Tenantcheck
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Set up your landlord account to start vetting tenants.
-        </p>
-      </div>
-      <form action={claimLandlordRole} onSubmit={onSubmit}>
-        <Button type="submit" size="lg" className="w-full">
-          Continue as a landlord
-        </Button>
-      </form>
     </div>
   );
 }

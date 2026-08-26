@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/page-header";
 import { BuyTenantcheckForm } from "./buy-tenantcheck-form";
 
 export default async function BuyTenantcheckPage({
@@ -15,12 +16,10 @@ export default async function BuyTenantcheckPage({
 
   return (
     <div className="max-w-md">
-      <h1 className="text-xl font-semibold">Buy a Tenantcheck</h1>
-      <p className="mt-2 text-sm text-neutral-600">
-        R350.00 per tenant — charged even if you&apos;ve checked this
-        property before, since each check is run against a specific
-        prospective tenant.
-      </p>
+      <PageHeader
+        title="Buy a Tenantcheck"
+        description="R350.00 per tenant — charged even if you've checked this property before, since each check is run against a specific prospective tenant."
+      />
       <BuyTenantcheckForm
         properties={properties ?? []}
         preselectedPropertyId={property}

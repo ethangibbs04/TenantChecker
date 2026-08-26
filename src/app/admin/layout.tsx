@@ -7,13 +7,18 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, roles } = await getCurrentUserAndRoles();
+  const { user, roles, pendingActionCounts } = await getCurrentUserAndRoles();
 
   if (!user) redirect("/login");
   if (!roles.includes("admin")) redirect("/");
 
   return (
-    <DashboardShell activeRole="admin" roles={roles} userLabel={getDisplayName(user)}>
+    <DashboardShell
+      activeRole="admin"
+      roles={roles}
+      userLabel={getDisplayName(user)}
+      pendingActionCounts={pendingActionCounts}
+    >
       {children}
     </DashboardShell>
   );

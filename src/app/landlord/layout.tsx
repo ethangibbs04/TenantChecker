@@ -7,20 +7,24 @@ export default async function LandlordLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, roles } = await getCurrentUserAndRoles();
+  const { user, roles, pendingActionCounts } = await getCurrentUserAndRoles();
 
+  // Deliberately no `roles.includes("landlord")` check: nobody has the
+  // landlord role until they've actually bought a Tenantcheck
+  // (create_check grants it), and /landlord/checks/new — the buy flow
+  // itself — lives under this same layout. Gating the whole tree on a
+  // role you can only earn by getting past the gate would lock everyone
+  // out. Pages here are otherwise scoped to the signed-in user's own data
+  // (see the `landlord_id` filters below), so a "pending" or tenant-only
+  // visitor just sees an empty dashboard with a prompt to buy.
   if (!user) redirect("/login");
-  if (!roles.includes("landlord")) redirect("/");
 
   return (
     <DashboardShell
       activeRole="landlord"
       roles={roles}
       userLabel={getDisplayName(user)}
-      navItems={[
-        { label: "My Activity", href: "/landlord" },
-        { label: "Properties", href: "/landlord/properties" },
-      ]}
+      pendingActionCounts={pendingActionCounts}
     >
       {children}
     </DashboardShell>

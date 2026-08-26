@@ -1,6 +1,9 @@
 "use client";
 
+import { Download, PackageCheck } from "lucide-react";
 import { DOCUMENT_TYPE_LABEL } from "@/lib/application-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function PackageDownloads({
   checkId,
@@ -33,34 +36,40 @@ export function PackageDownloads({
   }
 
   return (
-    <div className="rounded border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Your Tenantcheck package is ready</p>
-        {items.length > 1 && (
-          <button
-            type="button"
-            onClick={downloadAll}
-            className="rounded border px-3 py-1 text-sm"
-          >
-            Download all
-          </button>
-        )}
-      </div>
-      <ul className="mt-3 flex flex-col gap-2">
-        {items.map((item) => (
-          <li key={item.href} className="flex items-center justify-between text-sm">
-            <span>{item.label}</span>
-            <a
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded border px-3 py-1 underline"
+    <Card>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-full bg-success-100 text-success-600">
+              <PackageCheck className="size-4" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-medium text-slate-900">
+              Your Tenantcheck package is ready
+            </p>
+          </div>
+          {items.length > 1 && (
+            <Button type="button" variant="outline" size="sm" onClick={downloadAll}>
+              Download all
+            </Button>
+          )}
+        </div>
+        <ul className="flex flex-col gap-2">
+          {items.map((item) => (
+            <li
+              key={item.href}
+              className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
             >
-              Download
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
+              <span className="text-slate-700">{item.label}</span>
+              <Button asChild variant="ghost" size="sm">
+                <a href={item.href} target="_blank" rel="noreferrer">
+                  <Download />
+                  Download
+                </a>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

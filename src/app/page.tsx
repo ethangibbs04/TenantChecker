@@ -1,9 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { ShieldCheck, FileCheck2, Sparkles, ArrowRight } from "lucide-react";
+import { ShieldCheck, FileCheck2, Sparkles } from "lucide-react";
 import { getCurrentUserAndRoles, getDisplayName } from "@/lib/auth";
-import { ROLE_LABEL } from "@/lib/roles";
-import { claimLandlordRole } from "@/app/actions";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BuyTenantcheckButton } from "@/components/buy-tenantcheck-button";
@@ -39,10 +36,15 @@ const STEPS = [
   { title: "Review & ship", description: "Your complete package is reviewed and released to your dashboard." },
 ];
 
-function MarketingHome() {
+export default async function Home() {
+  const { user, roles, pendingActionCounts, lastActiveRole } = await getCurrentUserAndRoles();
+  const auth = user
+    ? { userLabel: getDisplayName(user), roles, pendingActionCounts, activeRole: lastActiveRole }
+    : null;
+
   return (
     <>
-      <SiteHeader auth={null} />
+      <SiteHeader auth={auth} />
       <main className="flex-1">
         <section
           className="text-white"
@@ -119,74 +121,7 @@ function MarketingHome() {
           </div>
         </section>
       </main>
-      <SiteFooter />
-    </>
-  );
-}
-
-export default async function Home() {
-  const { user, roles } = await getCurrentUserAndRoles();
-
-  if (!user) {
-    return <MarketingHome />;
-  }
-
-  if (roles.length === 1) {
-    redirect(`/${roles[0]}`);
-  }
-
-  const auth = { userLabel: getDisplayName(user), roles };
-
-  if (roles.length > 1) {
-    return (
-      <>
-        <SiteHeader auth={auth} />
-        <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16 sm:px-6">
-          <h1 className="font-display text-2xl font-medium text-navy-900">
-            Choose a dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            You have more than one role on Tenantcheck — pick which one to open.
-          </p>
-          <div className="mt-6 flex flex-col gap-3">
-            {roles.map((r) => (
-              <Link key={r} href={`/${r}`}>
-                <Card className="transition-shadow hover:shadow-md">
-                  <CardContent className="flex items-center justify-between">
-                    <span className="font-medium text-slate-900">
-                      {ROLE_LABEL[r]} dashboard
-                    </span>
-                    <ArrowRight className="size-4 text-slate-400" aria-hidden="true" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </main>
-        <SiteFooter loggedIn />
-      </>
-    );
-  }
-
-  // No roles yet: the only self-serve path is landlord signup. Tenants
-  // arrive via an invite link, which assigns the role automatically.
-  return (
-    <>
-      <SiteHeader auth={auth} />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16 text-center sm:px-6">
-        <h1 className="font-display text-2xl font-medium text-navy-900">
-          Welcome to Tenantcheck
-        </h1>
-        <p className="mt-2 text-slate-500">
-          Set up your landlord account to start vetting tenants.
-        </p>
-        <form action={claimLandlordRole} className="mt-6">
-          <Button type="submit" size="lg">
-            Continue as a landlord
-          </Button>
-        </form>
-      </main>
-      <SiteFooter loggedIn />
+      <SiteFooter loggedIn={!!user} />
     </>
   );
 }

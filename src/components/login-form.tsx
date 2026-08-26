@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ensureLandlordRoleForDestination } from "@/app/actions";
 import { resolveAmbiguousDestination, type PostAuthChoice } from "@/lib/resolve-post-auth";
+import { friendlyAuthErrorMessage, validateEmail } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,36 +20,47 @@ export function LoginForm({
   onSuccess?: () => void;
   /** When set (the auth dialog), a plain login with no specific destination
    * resolves roles client-side and hands them back instead of navigating,
-   * so the dialog can show a "choose a dashboard" / "claim landlord" step
-   * in place. Omitted on the standalone /login page, which keeps the old
-   * behavior of just navigating to "/" and letting it redirect server-side. */
+   * so the dialog can show a "choose a dashboard" step in place. Omitted on
+   * the standalone /login page, which keeps the old behavior of just
+   * navigating to "/" and letting it redirect server-side. */
   onAmbiguousDestination?: (choice: PostAuthChoice) => void;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const emailValidation = validateEmail(email);
+    setEmailError(emailValidation);
+    if (emailValidation) return;
+
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      setError(friendlyAuthErrorMessage(err));
+      setLoading(false);
       return;
     }
 
-    await ensureLandlordRoleForDestination(destination);
+    setLoading(false);
 
     if (destination === "/" && onAmbiguousDestination) {
       const resolved = await resolveAmbiguousDestination();
@@ -74,7 +85,7 @@ export function LoginForm({
         <h2 className="font-display text-2xl font-medium text-navy-900">Log in</h2>
         <p className="mt-1 text-sm text-slate-500">Welcome back to Tenantcheck.</p>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="login-email">Email</Label>
           <Input
@@ -82,8 +93,11 @@ export function LoginForm({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmailError(validateEmail(email))}
+            aria-invalid={!!emailError}
             required
           />
+          {emailError && <p className="text-xs text-danger-600">{emailError}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="login-password">Password</Label>

@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FileSearch } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { StatusTracker } from "@/components/status-tracker";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import type { CheckStatus } from "@/lib/checks";
 
 export default async function PropertyDetailPage({
@@ -26,50 +31,59 @@ export default async function PropertyDetailPage({
     .eq("property_id", id)
     .order("created_at", { ascending: false });
 
+  const addressLine = [
+    property.address_line1,
+    property.address_line2,
+    property.city,
+    property.province,
+    property.postal_code,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-xl font-semibold">{property.label}</h1>
-        <p className="text-sm text-neutral-500">
-          {property.address_line1}
-          {property.address_line2 ? `, ${property.address_line2}` : ""}
-          {property.city ? `, ${property.city}` : ""}
-          {property.province ? `, ${property.province}` : ""}
-          {property.postal_code ? ` ${property.postal_code}` : ""}
-        </p>
-      </div>
+      <PageHeader
+        title={property.label}
+        description={addressLine}
+        actions={
+          <Button asChild>
+            <Link href={`/landlord/checks/new?property=${property.id}`}>
+              Buy Tenantcheck for this property
+            </Link>
+          </Button>
+        }
+      />
 
-      <Link
-        href={`/landlord/checks/new?property=${property.id}`}
-        className="w-fit rounded bg-black px-3 py-2 text-sm text-white"
-      >
-        Buy Tenantcheck for this property
-      </Link>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-slate-900">Tenant check history</h2>
 
-      <div>
-        <h2 className="text-lg font-medium">Tenant check history</h2>
         {!checks || checks.length === 0 ? (
-          <p className="mt-2 text-neutral-600">
-            No Tenantchecks run against this property yet.
-          </p>
+          <EmptyState
+            icon={FileSearch}
+            title="No Tenantchecks yet"
+            description="No Tenantchecks have been run against this property yet."
+          />
         ) : (
-          <ul className="mt-4 flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {checks.map((c) => (
-              <li key={c.id} className="rounded border p-4">
-                <Link href={`/landlord/checks/${c.id}`} className="font-medium underline">
-                  {c.tenant_full_name}
-                </Link>
-                <p className="text-xs text-neutral-500">
-                  {new Date(c.created_at as string).toLocaleDateString()}
-                </p>
-                <div className="mt-3">
-                  <StatusTracker status={c.status as CheckStatus} />
-                </div>
-              </li>
+              <Link key={c.id} href={`/landlord/checks/${c.id}`}>
+                <Card className="transition-shadow hover:shadow-md">
+                  <CardContent className="flex flex-col gap-3">
+                    <div>
+                      <p className="font-medium text-slate-900">{c.tenant_full_name}</p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(c.created_at as string).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <StatusTracker status={c.status as CheckStatus} />
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

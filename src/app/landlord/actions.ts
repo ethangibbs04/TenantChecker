@@ -25,18 +25,19 @@ export async function buyTenantcheck(formData: FormData) {
   if (property_id === "__new__") property_id = "";
 
   if (!property_id) {
-    const label = String(formData.get("label") ?? "").trim();
     const address_line1 = String(formData.get("address_line1") ?? "").trim();
     const address_line2 = String(formData.get("address_line2") ?? "").trim() || null;
     const city = String(formData.get("city") ?? "").trim() || null;
     const province = String(formData.get("province") ?? "").trim() || null;
     const postal_code = String(formData.get("postal_code") ?? "").trim() || null;
 
+    // No separate "label" field in the form — the property list/detail
+    // views just display address_line1 as the property's name.
     const { data: property, error: propertyError } = await supabase
       .from("properties")
       .insert({
         landlord_id: user.id,
-        label,
+        label: address_line1,
         address_line1,
         address_line2,
         city,
