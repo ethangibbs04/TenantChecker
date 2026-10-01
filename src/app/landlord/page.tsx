@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Inbox } from "lucide-react";
@@ -19,9 +20,12 @@ type CheckRow = {
   properties: { label: string } | null;
 };
 
-function CheckCard({ check }: { check: CheckRow }) {
+function CheckCard({ check, index = 0 }: { check: CheckRow; index?: number }) {
   return (
-    <Card className="transition-shadow hover:shadow-md">
+    <Card
+      className="stagger-item transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md"
+      style={{ "--stagger-index": index } as CSSProperties}
+    >
       <CardContent className="flex flex-col gap-3">
         <Link href={`/landlord/checks/${check.id}`} className="hover:underline">
           <p className="font-medium text-slate-900">{check.tenant_full_name}</p>
@@ -58,8 +62,8 @@ function CheckSection({ title, checks }: { title: string; checks: CheckRow[] }) 
         {title} <span className="text-slate-400">({checks.length})</span>
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {checks.map((check) => (
-          <CheckCard key={check.id} check={check} />
+        {checks.map((check, i) => (
+          <CheckCard key={check.id} check={check} index={i} />
         ))}
       </div>
     </section>

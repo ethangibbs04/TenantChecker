@@ -47,10 +47,18 @@ export default async function Home() {
       <SiteHeader auth={auth} />
       <main className="flex-1">
         <section
-          className="text-white"
+          className="relative overflow-hidden text-white"
           style={{ background: "var(--gradient-brand)" }}
         >
-          <div className="mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:px-8">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{
+              background:
+                "radial-gradient(60% 55% at 50% 0%, rgba(255,255,255,0.18), transparent 70%)",
+            }}
+            aria-hidden="true"
+          />
+          <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:px-8">
             <h1 className="font-display text-4xl font-medium sm:text-5xl">
               Know who you&apos;re renting to.
             </h1>
@@ -94,10 +102,14 @@ export default async function Home() {
             <h2 className="text-center font-display text-2xl font-medium text-navy-900">
               How it works
             </h2>
-            <ol className="mt-10 grid gap-8 sm:grid-cols-5">
+            <ol className="relative mt-10 grid gap-8 sm:grid-cols-5">
+              <div
+                className="absolute inset-x-[10%] top-4 hidden h-px bg-slate-300 sm:block"
+                aria-hidden="true"
+              />
               {STEPS.map((step, i) => (
-                <li key={step.title} className="flex flex-col items-center gap-2 text-center">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-navy-700 text-sm font-medium text-white">
+                <li key={step.title} className="relative flex flex-col items-center gap-2 text-center">
+                  <span className="relative z-10 flex size-8 items-center justify-center rounded-full bg-navy-700 text-sm font-medium text-white">
                     {i + 1}
                   </span>
                   <p className="text-sm font-medium text-slate-900">{step.title}</p>

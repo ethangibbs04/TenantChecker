@@ -29,6 +29,8 @@ export async function GET(
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  const isView = new URL(request.url).searchParams.get("view") === "1";
+
   const { data: applicationForm } = await supabase
     .from("application_forms")
     .select("id, form_data, submitted_at")
@@ -59,7 +61,7 @@ export async function GET(
   );
 
   await supabase.rpc("log_audit", {
-    p_action: "application_form.downloaded",
+    p_action: isView ? "application_form.viewed" : "application_form.downloaded",
     p_entity_type: "application_form",
     p_entity_id: applicationForm.id,
     p_metadata: { check_id: id },
@@ -68,7 +70,7 @@ export async function GET(
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="application-${id}.pdf"`,
+      "Content-Disposition": `${isView ? "inline" : "attachment"}; filename="application-${id}.pdf"`,
     },
   });
 }

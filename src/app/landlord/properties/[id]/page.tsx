@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FileSearch } from "lucide-react";
@@ -66,9 +67,12 @@ export default async function PropertyDetailPage({
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {checks.map((c) => (
+            {checks.map((c, i) => (
               <Link key={c.id} href={`/landlord/checks/${c.id}`}>
-                <Card className="transition-shadow hover:shadow-md">
+                <Card
+                  className="stagger-item transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md"
+                  style={{ "--stagger-index": i } as CSSProperties}
+                >
                   <CardContent className="flex flex-col gap-3">
                     <div>
                       <p className="font-medium text-slate-900">{c.tenant_full_name}</p>

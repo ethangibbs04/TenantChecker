@@ -62,7 +62,7 @@ export async function buyTenantcheck(formData: FormData) {
 
   await notifyTenantConsentRequested(supabase, checkId, tenant_full_name, tenant_email);
 
-  redirect(`/landlord/checks/${checkId}`);
+  redirect(`/landlord/checks/${checkId}?toast=purchased`);
 }
 
 // Notification failures must never block the purchase flow itself — the

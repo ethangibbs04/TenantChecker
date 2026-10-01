@@ -22,19 +22,35 @@ export const ROLE_NAV_ITEMS: Record<Role, { label: string; href: string }[]> = {
     { label: "Properties", href: "/landlord/properties" },
   ],
   tenant: [{ label: "My Activity", href: "/tenant" }],
-  admin: [],
+  admin: [{ label: "Admin Dashboard", href: "/admin" }],
 };
 
-export type RoleNavItem = { label: string; href: string; hasPendingAction?: boolean };
+// Landlord/tenant show a plain "something needs you" dot on "My Activity"
+// (client-approved, deliberately no count). Admin explicitly wanted the
+// queue depth as a number — "needs review" is naturally a small integer,
+// not just a yes/no — so only admin's item gets a numbered pill instead.
+const NUMBERED_BADGE_ROLES: Role[] = ["admin"];
+
+export type RoleNavItem = {
+  label: string;
+  href: string;
+  hasPendingAction?: boolean;
+  pendingCount?: number;
+};
 
 function navItemsFor(role: Role, pendingActionCounts?: Partial<Record<Role, number>>): RoleNavItem[] {
-  return ROLE_NAV_ITEMS[role].map((item) => ({
-    ...item,
+  const count = pendingActionCounts?.[role];
+  return ROLE_NAV_ITEMS[role].map((item) => {
     // `pendingActionCounts` only ever lights up a role's own dashboard-root
-    // item (`/landlord`, `/tenant`) — "My Activity" for both roles today —
-    // never a secondary item like "Properties".
-    hasPendingAction: item.href === `/${role}` && !!pendingActionCounts?.[role],
-  }));
+    // item (`/landlord`, `/tenant`, `/admin`), never a secondary item like
+    // "Properties".
+    const isDashboardRoot = item.href === `/${role}`;
+    return {
+      ...item,
+      hasPendingAction: isDashboardRoot && !!count,
+      pendingCount: isDashboardRoot && NUMBERED_BADGE_ROLES.includes(role) ? count : undefined,
+    };
+  });
 }
 
 // Every role's own dashboard-root nav item is labeled "My Activity" — fine

@@ -93,6 +93,13 @@
   --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06);
   --shadow-md: 0 4px 16px -4px hsl(var(--shadow-color) / 0.12);
   --shadow-lg: 0 12px 32px -8px hsl(var(--shadow-color) / 0.18);
+
+  /* Makes every bare `transition`/`transition-*` utility app-wide use
+     --ease-premium by default (Tailwind v4's theme hook for this), instead
+     of every component needing its own `ease-(--ease-premium)` utility —
+     this is what actually wires the token in; it was previously defined
+     but never applied anywhere (Phase 7 motion audit). */
+  --default-transition-timing-function: var(--ease-premium);
 }
 
 :root {
@@ -223,11 +230,49 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--slate-300) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--slate-300);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--slate-400);
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Phase 8: staggered entrance for card grids / table rows — capped delay so
+   a long admin table doesn't leave the last row waiting seconds to appear.
+   Reduced-motion users get the content immediately (rule never applies). */
+@media (prefers-reduced-motion: no-preference) {
+  .stagger-item {
+    opacity: 0;
+    animation: stagger-in 420ms var(--ease-premium) forwards;
+    animation-delay: min(calc(var(--stagger-index, 0) * 60ms), 480ms);
+  }
+}
+
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

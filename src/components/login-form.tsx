@@ -12,11 +12,16 @@ import { Label } from "@/components/ui/label";
 export function LoginForm({
   destination,
   onSwitchToSignup,
+  onForgotPassword,
   onSuccess,
   onAmbiguousDestination,
 }: {
   destination: string;
   onSwitchToSignup: () => void;
+  /** Called with the email already typed (may be empty) so it can be
+   * prefilled on the next screen — the dialog switches mode in place, the
+   * standalone /login page navigates to /forgot-password. */
+  onForgotPassword: (email: string) => void;
   onSuccess?: () => void;
   /** When set (the auth dialog), a plain login with no specific destination
    * resolves roles client-side and hands them back instead of navigating,
@@ -97,10 +102,25 @@ export function LoginForm({
             aria-invalid={!!emailError}
             required
           />
-          {emailError && <p className="text-xs text-danger-600">{emailError}</p>}
+          {/* Fixed-height slot, not conditionally rendered: the "Forgot
+              password?" link sits directly below this field, and Radix
+              autofocuses Email on dialog open — without reserved space, the
+              very first click on that link blurs Email, the error text pops
+              in, and the layout shift between mousedown and mouseup moves
+              the link out from under the click. */}
+          <p className="min-h-4 text-xs text-danger-600">{emailError}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="login-password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="login-password">Password</Label>
+            <button
+              type="button"
+              onClick={() => onForgotPassword(email)}
+              className="text-xs font-medium text-sky-600 hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
           <Input
             id="login-password"
             type="password"

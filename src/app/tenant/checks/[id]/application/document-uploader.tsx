@@ -18,7 +18,7 @@ export function DocumentUploader({
   uploadedByType: Partial<Record<RequiredDocumentType, UploadedDoc>>;
 }) {
   return (
-    <div className="mt-4 flex flex-col gap-3">
+    <div className="grid gap-3 sm:grid-cols-3">
       {REQUIRED_DOCUMENT_TYPES.map((type) => (
         <DocumentUploadRow
           key={type}

@@ -7,15 +7,17 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoginForm } from "@/components/login-form";
 import { SignupForm } from "@/components/signup-form";
+import { ForgotPasswordForm } from "@/components/forgot-password-form";
 import { ROLE_LABEL } from "@/lib/roles";
 import type { PostAuthChoice } from "@/lib/resolve-post-auth";
 
-type Mode = "login" | "signup" | "choose-role";
+type Mode = "login" | "signup" | "choose-role" | "forgot-password";
 
 const MODE_TITLE: Record<Mode, string> = {
   login: "Log in",
   signup: "Sign up",
   "choose-role": "Choose a dashboard",
+  "forgot-password": "Reset your password",
 };
 
 type AuthDialogState = {
@@ -23,6 +25,7 @@ type AuthDialogState = {
   mode: Mode;
   next: string;
   choice: PostAuthChoice | null;
+  prefillEmail: string;
 };
 
 type AuthDialogContextValue = {
@@ -32,17 +35,23 @@ type AuthDialogContextValue = {
 
 const AuthDialogContext = createContext<AuthDialogContextValue | null>(null);
 
-const INITIAL_STATE: AuthDialogState = { open: false, mode: "login", next: "/", choice: null };
+const INITIAL_STATE: AuthDialogState = {
+  open: false,
+  mode: "login",
+  next: "/",
+  choice: null,
+  prefillEmail: "",
+};
 
 export function AuthDialogProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthDialogState>(INITIAL_STATE);
 
   const openLogin = useCallback(
-    (next = "/") => setState({ open: true, mode: "login", next, choice: null }),
+    (next = "/") => setState({ ...INITIAL_STATE, open: true, mode: "login", next }),
     [],
   );
   const openSignup = useCallback(
-    (next = "/") => setState({ open: true, mode: "signup", next, choice: null }),
+    (next = "/") => setState({ ...INITIAL_STATE, open: true, mode: "signup", next }),
     [],
   );
   const close = useCallback(() => setState((s) => ({ ...s, open: false })), []);
@@ -69,6 +78,9 @@ export function AuthDialogProvider({ children }: { children: React.ReactNode }) 
             <LoginForm
               destination={state.next}
               onSwitchToSignup={() => setState((s) => ({ ...s, mode: "signup" }))}
+              onForgotPassword={(email) =>
+                setState((s) => ({ ...s, mode: "forgot-password", prefillEmail: email }))
+              }
               onSuccess={close}
               onAmbiguousDestination={handleAmbiguousDestination}
             />
@@ -79,6 +91,12 @@ export function AuthDialogProvider({ children }: { children: React.ReactNode }) 
               onSwitchToLogin={() => setState((s) => ({ ...s, mode: "login" }))}
               onSuccess={close}
               onAmbiguousDestination={handleAmbiguousDestination}
+            />
+          )}
+          {state.mode === "forgot-password" && (
+            <ForgotPasswordForm
+              initialEmail={state.prefillEmail}
+              onSwitchToLogin={() => setState((s) => ({ ...s, mode: "login" }))}
             />
           )}
           {state.mode === "choose-role" && state.choice && (
@@ -111,7 +129,7 @@ function ChooseRolePanel({
       <div className="flex flex-col gap-3">
         {choice.roles.map((r) => (
           <Link key={r} href={`/${r}`} onClick={onNavigate}>
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md">
               <CardContent className="flex items-center justify-between">
                 <span className="font-medium text-slate-900">
                   {ROLE_LABEL[r]} dashboard

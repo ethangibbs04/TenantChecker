@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, PackageCheck } from "lucide-react";
+import { Download, Eye, PackageCheck } from "lucide-react";
 import { DOCUMENT_TYPE_LABEL } from "@/lib/application-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,12 +60,20 @@ export function PackageDownloads({
               className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
             >
               <span className="text-slate-700">{item.label}</span>
-              <Button asChild variant="ghost" size="sm">
-                <a href={item.href} target="_blank" rel="noreferrer">
-                  <Download />
-                  Download
-                </a>
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button asChild variant="ghost" size="sm">
+                  <a href={`${item.href}?view=1`} target="_blank" rel="noreferrer">
+                    <Eye />
+                    View
+                  </a>
+                </Button>
+                <Button asChild variant="ghost" size="icon-sm">
+                  <a href={item.href} target="_blank" rel="noreferrer">
+                    <Download />
+                    <span className="sr-only">Download</span>
+                  </a>
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

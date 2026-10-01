@@ -22,6 +22,9 @@ function LoginPageContent() {
       <LoginForm
         destination={destination}
         onSwitchToSignup={() => router.push(`/signup${crossLinkQuery}`)}
+        onForgotPassword={(email) =>
+          router.push(`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`)
+        }
       />
     </main>
   );

@@ -8,17 +8,26 @@ import {
   type AdminDocumentType,
 } from "@/lib/application-form";
 
-type UploadedDoc = { id: string; document_type: string; file_name: string; created_at: string };
+type UploadedDoc = {
+  id: string;
+  document_type: string;
+  file_name: string;
+  created_at: string;
+  viewUrl?: string | null;
+  downloadUrl?: string | null;
+};
 
 export function AdminDocumentUploader({
   checkId,
   uploadedByType,
+  locked = false,
 }: {
   checkId: string;
   uploadedByType: Partial<Record<AdminDocumentType, UploadedDoc>>;
+  locked?: boolean;
 }) {
   return (
-    <div className="mt-4 flex flex-col gap-3">
+    <div className="grid gap-3 sm:grid-cols-2">
       {ADMIN_DOCUMENT_TYPES.map((type) => (
         <DocumentUploadRow
           key={type}
@@ -27,6 +36,7 @@ export function AdminDocumentUploader({
           label={DOCUMENT_TYPE_LABEL[type]}
           existing={uploadedByType[type] ?? null}
           uploadAction={uploadAdminDocument}
+          locked={locked}
         />
       ))}
     </div>

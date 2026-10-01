@@ -2,6 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { shipCheck } from "@/app/admin/actions";
+import { useToast } from "@/components/toast-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function ShipButton({
   checkId,
@@ -13,6 +23,7 @@ export function ShipButton({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   function handleConfirm() {
     setError(null);
@@ -20,6 +31,11 @@ export function ShipButton({
       try {
         await shipCheck(checkId);
         setOpen(false);
+        toast({
+          title: "Check shipped",
+          description: "The package has been released to the landlord.",
+          variant: "success",
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to ship");
       }
@@ -27,52 +43,46 @@ export function ShipButton({
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        disabled={!readyToShip}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
-      >
+    <div className="flex flex-col gap-2">
+      <Button type="button" onClick={() => setOpen(true)} disabled={!readyToShip} className="w-fit">
         Ship check
-      </button>
+      </Button>
       {!readyToShip && (
-        <p className="mt-2 text-xs text-amber-600">
+        <p className="text-xs text-warning-600">
           Upload the credit check and AI recommendation above before shipping.
         </p>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded bg-white p-6">
-            <h2 className="text-lg font-semibold">Ship this Tenantcheck?</h2>
-            <p className="mt-2 text-sm text-neutral-600">
-              This releases the credit check and AI recommendation to the
-              landlord and can&apos;t be undone. Make sure both documents are
-              correct before continuing.
+      <Dialog open={open} onOpenChange={(next) => !isPending && setOpen(next)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ship this Tenantcheck?</DialogTitle>
+            <DialogDescription>
+              This releases the credit check and AI recommendation to the landlord
+              and can&apos;t be undone. Make sure both documents are correct before
+              continuing.
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
             </p>
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={isPending}
-                className="rounded border px-4 py-2 text-sm disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={isPending}
-                className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
-              >
-                {isPending ? "Shipping…" : "Confirm ship"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleConfirm} disabled={isPending}>
+              {isPending ? "Shipping…" : "Confirm ship"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

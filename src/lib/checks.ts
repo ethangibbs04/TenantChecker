@@ -41,6 +41,16 @@ export const TENANT_ACTIONABLE_STATUSES: CheckStatus[] = [
   "AWAITING_CONSENT",
   "AWAITING_APPLICATION",
 ];
+// Admin isn't scoped to any one check — every PROCESSING check is in their
+// court until shipped, same "actionable" concept as the other two roles.
+export const ADMIN_ACTIONABLE_STATUSES: CheckStatus[] = ["PROCESSING"];
+// The complement: every non-terminal, non-actionable status — i.e. admin's
+// "In Progress" bucket (waiting on the tenant or landlord, not on admin).
+export const ADMIN_IN_PROGRESS_STATUSES: CheckStatus[] = [
+  "AWAITING_CONSENT",
+  "AWAITING_PAYMENT",
+  "AWAITING_APPLICATION",
+];
 
 export type ActivitySection = "todo" | "active" | "history";
 

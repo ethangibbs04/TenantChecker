@@ -24,46 +24,63 @@ export interface ApplicationFormData {
   emergency_contact_phone: string;
 }
 
+// "section" is a display-only grouping for the form UI (Section 1/Layout
+// concern) — it doesn't affect what's stored in form_data. Field content
+// itself (names, labels, options) is still the first-draft placeholder set
+// noted above.
+export const APPLICATION_FORM_SECTIONS = [
+  "Personal details",
+  "Current residence",
+  "Employment & income",
+  "Household",
+  "Emergency contact",
+] as const;
+export type ApplicationFormSection = (typeof APPLICATION_FORM_SECTIONS)[number];
+
 export const APPLICATION_FORM_FIELDS: {
   name: keyof ApplicationFormData;
   label: string;
+  section: ApplicationFormSection;
   type?: "text" | "date" | "tel" | "number" | "select" | "textarea";
   options?: string[];
 }[] = [
-  { name: "id_number", label: "SA ID number" },
-  { name: "date_of_birth", label: "Date of birth", type: "date" },
+  { name: "id_number", label: "SA ID number", section: "Personal details" },
+  { name: "date_of_birth", label: "Date of birth", section: "Personal details", type: "date" },
   {
     name: "marital_status",
     label: "Marital status",
+    section: "Personal details",
     type: "select",
     options: ["Single", "Married", "Divorced", "Widowed"],
   },
-  { name: "current_address", label: "Current address", type: "textarea" },
-  { name: "monthly_income", label: "Monthly income (ZAR)", type: "number" },
-  { name: "employer_name", label: "Employer name" },
-  { name: "job_title", label: "Job title" },
+  { name: "current_address", label: "Current address", section: "Current residence", type: "textarea" },
+  { name: "current_landlord_name", label: "Current landlord's name", section: "Current residence" },
+  { name: "current_landlord_phone", label: "Current landlord's phone", section: "Current residence", type: "tel" },
+  { name: "reason_for_leaving", label: "Reason for leaving current address", section: "Current residence", type: "textarea" },
   {
     name: "employment_status",
     label: "Employment status",
+    section: "Employment & income",
     type: "select",
     options: ["Permanent", "Contract", "Self-employed", "Unemployed", "Student"],
   },
-  { name: "employment_length", label: "Length of employment" },
-  { name: "employer_phone", label: "Employer phone", type: "tel" },
-  { name: "current_landlord_name", label: "Current landlord's name" },
-  { name: "current_landlord_phone", label: "Current landlord's phone", type: "tel" },
-  { name: "reason_for_leaving", label: "Reason for leaving current address", type: "textarea" },
-  { name: "number_of_occupants", label: "Number of occupants", type: "number" },
+  { name: "employer_name", label: "Employer name", section: "Employment & income" },
+  { name: "job_title", label: "Job title", section: "Employment & income" },
+  { name: "employment_length", label: "Length of employment", section: "Employment & income" },
+  { name: "employer_phone", label: "Employer phone", section: "Employment & income", type: "tel" },
+  { name: "monthly_income", label: "Monthly income (ZAR)", section: "Employment & income", type: "number" },
+  { name: "number_of_occupants", label: "Number of occupants", section: "Household", type: "number" },
   {
     name: "has_pets",
     label: "Do you have pets?",
+    section: "Household",
     type: "select",
     options: ["No", "Yes"],
   },
-  { name: "pet_details", label: "Pet details (if any)", type: "textarea" },
-  { name: "emergency_contact_name", label: "Emergency contact name" },
-  { name: "emergency_contact_relationship", label: "Relationship to you" },
-  { name: "emergency_contact_phone", label: "Emergency contact phone", type: "tel" },
+  { name: "pet_details", label: "Pet details (if any)", section: "Household", type: "textarea" },
+  { name: "emergency_contact_name", label: "Emergency contact name", section: "Emergency contact" },
+  { name: "emergency_contact_relationship", label: "Relationship to you", section: "Emergency contact" },
+  { name: "emergency_contact_phone", label: "Emergency contact phone", section: "Emergency contact", type: "tel" },
 ];
 
 export const REQUIRED_DOCUMENT_TYPES = ["id_copy", "payslip", "bank_statement"] as const;

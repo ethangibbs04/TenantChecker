@@ -24,6 +24,8 @@ export async function GET(
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  const isView = new URL(request.url).searchParams.get("view") === "1";
+
   const { data: doc } = await supabase
     .from("documents")
     .select("id, check_id, document_type, storage_path, is_package_document")
@@ -34,16 +36,18 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
+  // Viewing renders inline in the browser (no Content-Disposition override);
+  // downloading forces a save-to-disk prompt.
   const { data: signed, error: signError } = await supabase.storage
     .from("tenant-documents")
-    .createSignedUrl(doc.storage_path, 60, { download: true });
+    .createSignedUrl(doc.storage_path, 60, isView ? undefined : { download: true });
 
   if (signError || !signed) {
-    return new NextResponse("Could not generate download link", { status: 500 });
+    return new NextResponse("Could not generate link", { status: 500 });
   }
 
   await supabase.rpc("log_audit", {
-    p_action: "document.downloaded",
+    p_action: isView ? "document.viewed" : "document.downloaded",
     p_entity_type: "document",
     p_entity_id: doc.id,
     p_metadata: { document_type: doc.document_type, check_id: doc.check_id },

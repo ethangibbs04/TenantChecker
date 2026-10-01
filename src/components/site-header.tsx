@@ -44,6 +44,7 @@ function NavLink({
   className = "",
   onClick,
   showDot = false,
+  pendingCount,
   children,
 }: {
   href: string;
@@ -52,8 +53,11 @@ function NavLink({
   onClick?: () => void;
   /** Little red dot indicating something in this section needs the user's action. */
   showDot?: boolean;
+  /** Numbered red pill instead of a plain dot — used where the count itself is useful (admin's queue depth). */
+  pendingCount?: number;
   children: React.ReactNode;
 }) {
+  const hasCount = typeof pendingCount === "number" && pendingCount > 0;
   return (
     <Link
       href={href}
@@ -65,13 +69,24 @@ function NavLink({
       } ${className}`}
     >
       {children}
-      {showDot && (
+      {hasCount ? (
         <span
-          className="ml-1.5 inline-block size-1.5 rounded-full bg-danger-600 align-middle"
+          className="ml-1.5 inline-flex min-w-4.5 items-center justify-center rounded-full bg-danger-600 px-1 text-[0.65rem] leading-4 font-semibold text-white align-middle"
           aria-hidden="true"
-        />
+        >
+          {pendingCount > 99 ? "99+" : pendingCount}
+        </span>
+      ) : (
+        showDot && (
+          <span
+            className="ml-1.5 inline-block size-1.5 rounded-full bg-danger-600 align-middle"
+            aria-hidden="true"
+          />
+        )
       )}
-      {showDot && <span className="sr-only"> — action needed</span>}
+      {(hasCount || showDot) && (
+        <span className="sr-only"> — {hasCount ? `${pendingCount} ` : ""}action needed</span>
+      )}
     </Link>
   );
 }
@@ -119,6 +134,7 @@ export function SiteHeader({ auth }: { auth: SiteHeaderAuth | null }) {
                   active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
                   className="px-3 py-1.5"
                   showDot={item.hasPendingAction}
+                  pendingCount={item.pendingCount}
                 >
                   {item.label}
                 </NavLink>
@@ -181,6 +197,7 @@ export function SiteHeader({ auth }: { auth: SiteHeaderAuth | null }) {
                       active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
                       className="block px-3 py-2"
                       showDot={item.hasPendingAction}
+                      pendingCount={item.pendingCount}
                     >
                       {item.label}
                     </NavLink>

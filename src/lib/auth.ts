@@ -2,13 +2,18 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { type Role, getDisplayName } from "@/lib/roles";
-import { LANDLORD_ACTIONABLE_STATUSES, TENANT_ACTIONABLE_STATUSES } from "@/lib/checks";
+import {
+  ADMIN_ACTIONABLE_STATUSES,
+  LANDLORD_ACTIONABLE_STATUSES,
+  TENANT_ACTIONABLE_STATUSES,
+} from "@/lib/checks";
 
 export type { Role };
 export { getDisplayName };
 
-// Feeds the little red dot on the "My Activity" nav item — how many of a
-// role's checks are sitting in a status where the ball is in *their* court.
+// Feeds the nav-item badge (a plain dot for landlord/tenant's "My Activity",
+// a numbered pill for admin's "Admin Dashboard") — how many of a role's
+// checks are sitting in a status where the ball is in *their* court.
 export type PendingActionCounts = Partial<Record<Role, number>>;
 
 // Wrapped in React's cache() since the unified site header now calls this on
@@ -47,7 +52,7 @@ export const getCurrentUserAndRoles = cache(async () => {
   const lastActiveRole =
     activeRoleCookie && roles.includes(activeRoleCookie) ? activeRoleCookie : undefined;
 
-  const [landlordPending, tenantPending] = await Promise.all([
+  const [landlordPending, tenantPending, adminPending] = await Promise.all([
     roles.includes("landlord")
       ? supabase
           .from("checks")
@@ -62,11 +67,20 @@ export const getCurrentUserAndRoles = cache(async () => {
           .eq("tenant_id", user.id)
           .in("status", TENANT_ACTIONABLE_STATUSES)
       : null,
+    // No ownership filter — admin isn't the landlord or tenant on any check,
+    // they review every check in the queue.
+    roles.includes("admin")
+      ? supabase
+          .from("checks")
+          .select("id", { count: "exact", head: true })
+          .in("status", ADMIN_ACTIONABLE_STATUSES)
+      : null,
   ]);
 
   const pendingActionCounts: PendingActionCounts = {
     ...(landlordPending ? { landlord: landlordPending.count ?? 0 } : {}),
     ...(tenantPending ? { tenant: tenantPending.count ?? 0 } : {}),
+    ...(adminPending ? { admin: adminPending.count ?? 0 } : {}),
   };
 
   return { user, roles, pendingActionCounts, lastActiveRole };

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -30,9 +31,12 @@ export default async function PropertiesPage() {
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {properties.map((p) => (
+          {properties.map((p, i) => (
             <Link key={p.id} href={`/landlord/properties/${p.id}`}>
-              <Card className="transition-shadow hover:shadow-md">
+              <Card
+                className="stagger-item transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md"
+                style={{ "--stagger-index": i } as CSSProperties}
+              >
                 <CardContent className="flex flex-col gap-1">
                   <p className="font-medium text-slate-900">{p.label}</p>
                   <p className="text-sm text-slate-500">

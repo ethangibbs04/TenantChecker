@@ -14,12 +14,12 @@ export function StatusTracker({ status }: { status: CheckStatus }) {
   );
 
   return (
-    <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+    <ol className="flex flex-wrap items-center gap-y-2">
       {CHECK_STATUSES.map((step, i) => {
         const done = i < currentIndex;
         const active = i === currentIndex;
         return (
-          <li key={step} className="flex items-center gap-1.5">
+          <li key={step} className="flex items-center">
             <Badge
               variant={active ? "default" : done ? "success" : "secondary"}
               className="gap-1 px-2.5 py-1 text-xs transition-colors duration-300"
@@ -28,9 +28,12 @@ export function StatusTracker({ status }: { status: CheckStatus }) {
               {STATUS_LABEL[step]}
             </Badge>
             {i < CHECK_STATUSES.length - 1 && (
-              <span className="text-slate-300" aria-hidden="true">
-                →
-              </span>
+              <span
+                className={`mx-1.5 h-0.5 w-4 shrink-0 rounded-full transition-colors duration-300 sm:w-6 ${
+                  done ? "bg-success-600" : "bg-slate-200"
+                }`}
+                aria-hidden="true"
+              />
             )}
           </li>
         );

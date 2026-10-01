@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
+import { QueryToast } from "@/components/query-toast";
 import { StatusTracker } from "@/components/status-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export default async function CheckDetailPage({
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
+      <QueryToast />
       <PageHeader
         title={check.tenant_full_name}
         description={`${propertyLabel} · ${check.tenant_email}${check.tenant_phone ? ` · ${check.tenant_phone}` : ""}`}

@@ -28,7 +28,7 @@ export async function submitConsent(formData: FormData) {
 
   await notifyLandlordPaymentRequested(supabase, checkId);
 
-  redirect(`/tenant/checks/${checkId}`);
+  redirect(`/tenant/checks/${checkId}?toast=consent_submitted`);
 }
 
 // Notification failures must never block consent itself — the check has
@@ -105,7 +105,7 @@ export async function submitApplication(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
-  redirect(`/tenant/checks/${checkId}`);
+  redirect(`/tenant/checks/${checkId}?toast=application_submitted`);
 }
 
 export async function uploadDocument(formData: FormData) {
