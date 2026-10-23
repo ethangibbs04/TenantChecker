@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,15 @@ export function AdminCheckSearch({ initialQuery }: { initialQuery: string }) {
   const searchParams = useSearchParams();
   const [value, setValue] = useState(initialQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Navigating away before the 300ms debounce fires otherwise leaves it
+  // pending — it still fires post-unmount and calls router.replace() with
+  // this now-stale pathname, silently bouncing the user back to this tab.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value;

@@ -1,11 +1,9 @@
 import { Check } from "lucide-react";
-import { CHECK_STATUSES, STATUS_LABEL, type CheckStatus } from "@/lib/checks";
+import { CHECK_STATUSES, FAILED_STATUSES, STATUS_LABEL, type CheckStatus } from "@/lib/checks";
 import { Badge } from "@/components/ui/badge";
 
-const TERMINAL_STATES: CheckStatus[] = ["DECLINED", "CANCELLED", "EXPIRED"];
-
 export function StatusTracker({ status }: { status: CheckStatus }) {
-  if (TERMINAL_STATES.includes(status)) {
+  if (FAILED_STATUSES.includes(status)) {
     return <Badge variant="destructive">{STATUS_LABEL[status]}</Badge>;
   }
 

@@ -1,15 +1,17 @@
 "use server";
 
+import { createElement, type ReactElement } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { CONSENT_TEXT, CONSENT_VERSION } from "@/lib/consent";
 import {
-  APPLICATION_FORM_FIELDS,
   REQUIRED_DOCUMENT_TYPES,
   type ApplicationFormData,
   type RequiredDocumentType,
 } from "@/lib/application-form";
+import { ApplicationFormDocument } from "@/lib/application-form-pdf";
 import { sendEmail } from "@/lib/resend";
 import { paymentRequestedEmail } from "@/lib/email-templates";
 import { getUserEmailById } from "@/lib/supabase/service";
@@ -72,21 +74,17 @@ async function notifyLandlordPaymentRequested(
   }
 }
 
-function extractFormData(formData: FormData): ApplicationFormData {
-  const data = {} as ApplicationFormData;
-  for (const field of APPLICATION_FORM_FIELDS) {
-    data[field.name] = String(formData.get(field.name) ?? "").trim() as never;
-  }
-  return data;
-}
-
-export async function saveApplicationDraft(formData: FormData) {
-  const checkId = String(formData.get("check_id") ?? "");
+// Called directly with the form's state object (not a FormData/native
+// submit) — the form has arrays (adults/pets/vehicles) and a boolean
+// (declaration_agree) that don't round-trip cleanly through FormData, and
+// nothing here needs progressive enhancement since it's already a fully
+// client-stateful form.
+export async function saveApplicationDraft(checkId: string, data: ApplicationFormData) {
   const supabase = await createClient();
 
   const { error } = await supabase
     .from("application_forms")
-    .update({ form_data: extractFormData(formData) })
+    .update({ form_data: data })
     .eq("check_id", checkId);
 
   if (error) throw new Error(error.message);
@@ -94,13 +92,62 @@ export async function saveApplicationDraft(formData: FormData) {
   revalidatePath(`/tenant/checks/${checkId}/application`);
 }
 
-export async function submitApplication(formData: FormData) {
-  const checkId = String(formData.get("check_id") ?? "");
+// Property/tenant name come from `checks`, not the submitted form, so the
+// generated PDF's header can't be spoofed by the client-sent data.
+async function uploadGeneratedApplicationFormPdf(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  checkId: string,
+  tenantId: string,
+  data: ApplicationFormData
+) {
+  const { data: check } = await supabase
+    .from("checks")
+    .select("tenant_full_name, properties(label)")
+    .eq("id", checkId)
+    .single();
+
+  const propertyLabel = (check?.properties as unknown as { label: string } | null)?.label ?? "—";
+
+  const pdfBuffer = await renderToBuffer(
+    createElement(ApplicationFormDocument, {
+      tenantName: check?.tenant_full_name ?? "—",
+      propertyLabel,
+      submittedAt: new Date().toISOString(),
+      formData: data,
+    }) as unknown as ReactElement<DocumentProps>
+  );
+
+  const storagePath = `${checkId}/application_form/${Date.now()}.pdf`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("tenant-documents")
+    .upload(storagePath, pdfBuffer, { contentType: "application/pdf" });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { error: insertError } = await supabase.from("documents").insert({
+    check_id: checkId,
+    document_type: "application_form",
+    uploaded_by: tenantId,
+    storage_path: storagePath,
+    file_name: "application-form.pdf",
+    mime_type: "application/pdf",
+    file_size_bytes: pdfBuffer.length,
+  });
+  if (insertError) throw new Error(insertError.message);
+}
+
+export async function submitApplication(checkId: string, data: ApplicationFormData) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await uploadGeneratedApplicationFormPdf(supabase, checkId, user.id, data);
 
   const { error } = await supabase.rpc("submit_application", {
     p_check_id: checkId,
-    p_form_data: extractFormData(formData),
+    p_form_data: data,
   });
 
   if (error) throw new Error(error.message);

@@ -62,16 +62,7 @@ export default async function CheckDetailPage({
     .eq("check_id", id)
     .eq("is_package_document", true);
 
-  const { data: applicationForm } = await supabase
-    .from("application_forms")
-    .select("id")
-    .eq("check_id", id)
-    .eq("status", "submitted")
-    .maybeSingle();
-
-  const showPackage =
-    check.status === "COMPLETED" &&
-    ((packageDocuments && packageDocuments.length > 0) || !!applicationForm);
+  const showPackage = check.status === "COMPLETED" && !!packageDocuments && packageDocuments.length > 0;
 
   const propertyLabel = (check.properties as unknown as { label: string } | null)?.label;
 
@@ -110,13 +101,7 @@ export default async function CheckDetailPage({
         <InviteLinkBox token={invite.token} expiresAt={invite.expires_at as string} />
       )}
 
-      {showPackage && (
-        <PackageDownloads
-          checkId={id}
-          hasApplicationForm={!!applicationForm}
-          documents={packageDocuments ?? []}
-        />
-      )}
+      {showPackage && <PackageDownloads documents={packageDocuments ?? []} />}
     </div>
   );
 }

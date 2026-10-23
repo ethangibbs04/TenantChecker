@@ -1,14 +1,18 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ListTodo } from "lucide-react";
+import { CheckCircle2, ListTodo, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { StatusTracker } from "@/components/status-tracker";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { TENANT_ACTIONABLE_STATUSES, getActivitySection, type CheckStatus } from "@/lib/checks";
+import {
+  FAILED_STATUSES,
+  STATUS_LABEL,
+  TENANT_ACTIONABLE_STATUSES,
+  getActivitySection,
+  type CheckStatus,
+} from "@/lib/checks";
 
 type CheckRow = {
   id: string;
@@ -18,35 +22,32 @@ type CheckRow = {
 };
 
 function CheckCard({ check, index = 0 }: { check: CheckRow; index?: number }) {
+  const waitingOnTenant = TENANT_ACTIONABLE_STATUSES.includes(check.status);
   return (
     <Card
-      className="stagger-item transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md"
+      className="stagger-item py-0 transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md"
       style={{ "--stagger-index": index } as CSSProperties}
     >
-      <CardContent className="flex flex-col gap-3">
-        <Link href={`/tenant/checks/${check.id}`} className="font-medium text-slate-900 hover:underline">
-          {check.properties?.label}
+      <CardContent className="p-0">
+        <Link href={`/tenant/checks/${check.id}`} className="flex flex-col gap-1.5 p-4">
+          <span className="font-medium text-slate-900">{check.properties?.label}</span>
+          <span className="flex items-center gap-1.5 text-sm text-slate-500">
+            {check.status === "COMPLETED" && (
+              <CheckCircle2 className="size-4 shrink-0 text-success-600" aria-hidden="true" />
+            )}
+            {FAILED_STATUSES.includes(check.status) && (
+              <XCircle className="size-4 shrink-0 text-danger-600" aria-hidden="true" />
+            )}
+            {STATUS_LABEL[check.status]}
+            {waitingOnTenant && (
+              <span
+                className="inline-block size-1.5 shrink-0 rounded-full bg-danger-600"
+                aria-hidden="true"
+              />
+            )}
+            {waitingOnTenant && <span className="sr-only"> — action needed</span>}
+          </span>
         </Link>
-        <StatusTracker status={check.status} />
-
-        {check.status === "AWAITING_CONSENT" && (
-          <Button asChild size="sm" className="w-fit">
-            <Link href={`/tenant/checks/${check.id}/consent`}>Give consent</Link>
-          </Button>
-        )}
-        {check.status === "AWAITING_APPLICATION" && (
-          <Button asChild size="sm" className="w-fit">
-            <Link href={`/tenant/checks/${check.id}/application`}>Fill out application</Link>
-          </Button>
-        )}
-        {check.status === "AWAITING_PAYMENT" && (
-          <p className="text-xs text-slate-500">
-            Waiting on your landlord to complete payment — nothing to do here yet.
-          </p>
-        )}
-        {check.status === "PROCESSING" && (
-          <p className="text-xs text-slate-500">Being reviewed by our team.</p>
-        )}
       </CardContent>
     </Card>
   );

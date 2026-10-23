@@ -33,6 +33,9 @@ export const HISTORY_STATUSES: CheckStatus[] = [
   "EXPIRED",
 ];
 
+// The subset of HISTORY_STATUSES that didn't end in a completed Tenantcheck.
+export const FAILED_STATUSES: CheckStatus[] = ["DECLINED", "CANCELLED", "EXPIRED"];
+
 // Statuses where the ball is specifically in that role's court — the same
 // source of truth drives the "My Activity" nav notification dot and the
 // To-Do/Active split below, so they can't drift apart.

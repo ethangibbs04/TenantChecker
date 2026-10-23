@@ -6,28 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export function PackageDownloads({
-  checkId,
-  hasApplicationForm,
   documents,
 }: {
-  checkId: string;
-  hasApplicationForm: boolean;
   documents: { id: string; document_type: string }[];
 }) {
-  const items = [
-    ...(hasApplicationForm
-      ? [
-          {
-            href: `/api/checks/${checkId}/application-form/download`,
-            label: "Application form",
-          },
-        ]
-      : []),
-    ...documents.map((doc) => ({
-      href: `/api/documents/${doc.id}/download`,
-      label: DOCUMENT_TYPE_LABEL[doc.document_type] ?? doc.document_type,
-    })),
-  ];
+  const items = documents.map((doc) => ({
+    href: `/api/documents/${doc.id}/download`,
+    label: DOCUMENT_TYPE_LABEL[doc.document_type] ?? doc.document_type,
+  }));
 
   function downloadAll() {
     for (const item of items) {

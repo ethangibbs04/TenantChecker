@@ -2,9 +2,23 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/page-header";
 import type { ApplicationFormData } from "@/lib/application-form";
-import { REQUIRED_DOCUMENT_TYPES } from "@/lib/application-form";
+import { isDocumentSetComplete, REQUIRED_DOCUMENT_TYPES, type RequiredDocumentType } from "@/lib/application-form";
 import { ApplicationForm } from "./application-form";
 import { DocumentUploader } from "./document-uploader";
+
+async function signViewAndDownload(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  storagePath: string
+) {
+  const [view, download] = await Promise.all([
+    supabase.storage.from("tenant-documents").createSignedUrl(storagePath, 300),
+    supabase.storage.from("tenant-documents").createSignedUrl(storagePath, 300, { download: true }),
+  ]);
+  return {
+    viewUrl: view.data?.signedUrl ?? null,
+    downloadUrl: download.data?.signedUrl ?? null,
+  };
+}
 
 export default async function ApplicationPage({
   params,
@@ -41,13 +55,22 @@ export default async function ApplicationPage({
 
   const { data: documents } = await supabase
     .from("documents")
-    .select("id, document_type, file_name, created_at")
+    .select("id, document_type, file_name, created_at, storage_path")
     .eq("check_id", id)
-    .in("document_type", REQUIRED_DOCUMENT_TYPES);
+    .in("document_type", REQUIRED_DOCUMENT_TYPES)
+    .order("created_at", { ascending: true });
 
-  const uploadedByType = new Map(
-    (documents ?? []).map((d) => [d.document_type, d])
-  );
+  const filesByType: Partial<
+    Record<RequiredDocumentType, { id: string; document_type: string; file_name: string; created_at: string; viewUrl: string | null; downloadUrl: string | null }[]>
+  > = {};
+  const uploadedTypes = new Set<string>();
+
+  for (const doc of documents ?? []) {
+    const type = doc.document_type as RequiredDocumentType;
+    uploadedTypes.add(type);
+    const urls = await signViewAndDownload(supabase, doc.storage_path);
+    (filesByType[type] ??= []).push({ ...doc, ...urls });
+  }
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
@@ -58,7 +81,7 @@ export default async function ApplicationPage({
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-slate-900">Documents</h2>
-        <DocumentUploader checkId={id} uploadedByType={Object.fromEntries(uploadedByType)} />
+        <DocumentUploader checkId={id} filesByType={filesByType} />
       </div>
 
       <div className="flex flex-col gap-3">
@@ -66,7 +89,7 @@ export default async function ApplicationPage({
         <ApplicationForm
           checkId={id}
           initialData={(applicationForm?.form_data as ApplicationFormData) ?? null}
-          allDocumentsUploaded={REQUIRED_DOCUMENT_TYPES.every((t) => uploadedByType.has(t))}
+          allDocumentsUploaded={isDocumentSetComplete(uploadedTypes)}
         />
       </div>
     </div>

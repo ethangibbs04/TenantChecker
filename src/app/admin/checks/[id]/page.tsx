@@ -10,11 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { CheckStatus } from "@/lib/checks";
 import {
   ADMIN_DOCUMENT_TYPES,
-  APPLICATION_FORM_FIELDS,
   REQUIRED_DOCUMENT_TYPES,
   DOCUMENT_TYPE_LABEL,
   type AdminDocumentType,
-  type ApplicationFormData,
 } from "@/lib/application-form";
 import { AdminDocumentUploader } from "./admin-document-uploader";
 import { ShipButton } from "./ship-button";
@@ -99,12 +97,6 @@ export default async function AdminCheckDetailPage({
 
   if (!check) notFound();
 
-  const { data: applicationForm } = await supabase
-    .from("application_forms")
-    .select("form_data, status, submitted_at")
-    .eq("check_id", id)
-    .maybeSingle();
-
   const { data: documents } = await supabase
     .from("documents")
     .select("id, document_type, file_name, storage_path, created_at")
@@ -122,6 +114,7 @@ export default async function AdminCheckDetailPage({
   const adminDocuments = (documents ?? []).filter((d) =>
     (ADMIN_DOCUMENT_TYPES as readonly string[]).includes(d.document_type)
   );
+  const applicationFormDoc = (documents ?? []).find((d) => d.document_type === "application_form");
 
   const tenantDocumentsWithUrls = await Promise.all(
     tenantDocuments.map(async (doc) => ({
@@ -129,6 +122,10 @@ export default async function AdminCheckDetailPage({
       ...(await signViewAndDownload(supabase, doc.storage_path)),
     }))
   );
+
+  const applicationFormWithUrls = applicationFormDoc
+    ? { ...applicationFormDoc, ...(await signViewAndDownload(supabase, applicationFormDoc.storage_path)) }
+    : null;
 
   const adminDocumentsByType = new Map(
     await Promise.all(
@@ -140,8 +137,6 @@ export default async function AdminCheckDetailPage({
   );
 
   const readyToShip = ADMIN_DOCUMENT_TYPES.every((t) => adminDocumentsByType.has(t));
-  const isApplicationFormSubmitted = applicationForm?.status === "submitted";
-  const formData = applicationForm?.form_data as ApplicationFormData | undefined;
 
   const status = check.status as CheckStatus;
   const waitingStep = WAITING_STEP[status];
@@ -241,36 +236,30 @@ export default async function AdminCheckDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              {isApplicationFormSubmitted && (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                    <span className="flex items-center gap-2 text-slate-700">
-                      <FileText className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
-                      Application form
-                    </span>
-                    <div className="flex items-center gap-1">
+              {applicationFormWithUrls && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2 text-slate-700">
+                    <FileText className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    Application form
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {applicationFormWithUrls.viewUrl && (
                       <Button asChild variant="ghost" size="sm">
-                        <a href={`/api/checks/${id}/application-form/download?view=1`} target="_blank" rel="noreferrer">
+                        <a href={applicationFormWithUrls.viewUrl} target="_blank" rel="noreferrer">
                           <Eye />
                           View
                         </a>
                       </Button>
+                    )}
+                    {applicationFormWithUrls.downloadUrl && (
                       <Button asChild variant="ghost" size="icon-sm">
-                        <a href={`/api/checks/${id}/application-form/download`} target="_blank" rel="noreferrer">
+                        <a href={applicationFormWithUrls.downloadUrl} target="_blank" rel="noreferrer">
                           <Download />
                           <span className="sr-only">Download</span>
                         </a>
                       </Button>
-                    </div>
+                    )}
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-slate-200 p-4 text-sm">
-                    {APPLICATION_FORM_FIELDS.map((field) => (
-                      <div key={field.name} className="contents">
-                        <dt className="text-slate-500">{field.label}</dt>
-                        <dd className="text-slate-900">{formData?.[field.name] || "—"}</dd>
-                      </div>
-                    ))}
-                  </dl>
                 </div>
               )}
 
